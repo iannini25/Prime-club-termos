@@ -112,69 +112,87 @@
   </div>
 
   <script>
-    // Máscara do CPF enquanto digita
-    const cpfInput = document.getElementById('cpf');
-    cpfInput.addEventListener('input', function(e) {
-      let value = this.value.replace(/\D/g, ''); // só números
-      if (value.length > 11) value = value.slice(0, 11);
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3xy5Rsw-oU6dXs68D4ALn_TxK9HI49CTP_y7XlpEo9PgghosYumMcQnHnjsLWiuVl0Q/exec"; // sua URL
 
-      let formatted = '';
-      if (value.length > 9) {
-        formatted = value.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4");
-      } else if (value.length > 6) {
-        formatted = value.replace(/(\d{3})(\d{3})(\d{0,3})/, "$1.$2.$3");
-      } else if (value.length > 3) {
-        formatted = value.replace(/(\d{3})(\d{0,3})/, "$1.$2");
-      } else {
-        formatted = value;
-      }
-      this.value = formatted;
-    });
+  const form = document.getElementById('participationForm');
+  const btnSubmit = document.getElementById('btnSubmit');
+  const cpfInput = document.getElementById('cpf');
 
-    // Função para validar CPF
-    function validarCPF(cpf) {
-      cpf = cpf.replace(/\D/g, '');
-      if (cpf.length !== 11) return false;
+  // Máscara CPF
+  cpfInput.addEventListener('input', function () {
+    let value = this.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
 
-      // CPFs inválidos conhecidos
-      if (/^(\d)\1+$/.test(cpf)) return false;
+    let formatted = '';
+    if (value.length > 9) {
+      formatted = value.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4");
+    } else if (value.length > 6) {
+      formatted = value.replace(/(\d{3})(\d{3})(\d{0,3})/, "$1.$2.$3");
+    } else if (value.length > 3) {
+      formatted = value.replace(/(\d{3})(\d{0,3})/, "$1.$2");
+    } else {
+      formatted = value;
+    }
+    this.value = formatted;
+  });
 
-      let soma = 0;
-      for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
-      let resto = (soma * 10) % 11;
-      if (resto === 10 || resto === 11) resto = 0;
-      if (resto !== parseInt(cpf.charAt(9))) return false;
+  function validarCPF(cpf) {
+    cpf = cpf.replace(/\D/g, '');
+    if (cpf.length !== 11) return false;
+    if (/^(\d)\1+$/.test(cpf)) return false;
 
-      soma = 0;
-      for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
-      resto = (soma * 10) % 11;
-      if (resto === 10 || resto === 11) resto = 0;
-      if (resto !== parseInt(cpf.charAt(10))) return false;
+    let soma = 0;
+    for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
+    let resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.charAt(9))) return false;
 
-      return true;
+    soma = 0;
+    for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.charAt(10))) return false;
+
+    return true;
+  }
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const name = document.getElementById('name').value.trim();
+    const cpf = document.getElementById('cpf').value.trim();
+    const agree = document.getElementById('agree').checked;
+
+    if (!name || !cpf || !agree) {
+      alert("Por favor, preencha todos os campos e concorde com os Termos e Condições.");
+      return;
     }
 
-    // Validação no submit
-    document.getElementById('participationForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+    if (!validarCPF(cpf)) {
+      alert("CPF inválido. Verifique e tente novamente.");
+      return;
+    }
 
-      const name = document.getElementById('name').value.trim();
-      const cpf = document.getElementById('cpf').value.trim();
-      const agree = document.getElementById('agree').checked;
+    // Desabilita botão para evitar duplo clique
+    btnSubmit.disabled = true;
+    btnSubmit.innerText = "Enviando...";
 
-      if (!name || !cpf || !agree) {
-        alert("Por favor, preencha todos os campos e concorde com os Termos e Condições.");
-        return;
-      }
+    const params = new URLSearchParams();
+    params.append('name', name);
+    params.append('cpf', cpf);
 
-      if (!validarCPF(cpf)) {
-        alert("CPF inválido. Verifique e tente novamente.");
-        return;
-      }
+    // Faz a requisição mas não espera resposta para redirecionar rápido
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+      },
+      body: params.toString()
+    }).catch(() => { /* falha silenciosa, mas redireciona mesmo assim */ });
 
-      // Redireciona após validação
-      window.location.href = "https://uticket.com.br/event/01LCKQOR9NLI5O"; 
-    });
-  </script>
+    // Redireciona quase imediato
+    window.location.href = "https://uticket.com.br/event/01LCKQOR9NLI5O";
+  });
+</script>
 </body>
 </html>
